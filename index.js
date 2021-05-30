@@ -7,6 +7,7 @@ const fs = require('fs');
 
 // inports sql libray.
 var mysql = require('mysql');
+const e = require('express');
 
 // Sets up an express server for for socket io to communicate on.
 const app = require('express')();
@@ -23,8 +24,8 @@ const projectsPath = "/home/matthew/Downloads/testprojects/"; // Will be nginx l
 //Connects to and sql server for data.
 var con = mysql.createConnection({
   host: "10.0.0.176",   // localhost
-  user: "merc",         //ech
-  password: "Astrix10", //esports
+  user: "saturn",         //ech
+  password: "saturn", //esports
   database: "hgc-ech"   //hgc-ech
 });
 
@@ -40,6 +41,16 @@ con.connect(function(err) {
     throw err;
   } 
   console.log("Connected to sql server!");
+
+  con.query("DELETE FROM active;", function (err, result)
+    {
+     if (err) 
+     {
+       console.log("error with active users table erasment.");
+     }else{
+       console.log("table eraised!");
+     }
+    });
 });
 
 function heartbeat()
@@ -216,6 +227,7 @@ io.on('connection', (socket) => {
     if(msg[0] == "name")
     {
 
+      try {
     // get username from active database;
     con.query("SELECT username FROM active WHERE socketid='" + socket.id + "';", function (err, result)
     {
@@ -227,15 +239,24 @@ io.on('connection', (socket) => {
      } else{
       console.log("the username should be ");
       console.log(result);
-      if(result != undefined)
+      if(typeof result[0] === "undefined")
       {
+
+        console.log("no username propity, get ready for the time out.");
+        socket.emit("login", "timeout");  
+      }
+      else {
+              
+        console.log("was defined");
         socket.emit("username", result[0].username);
       }
      }
     });
-    }
+  }catch(ignore)
+  {
 
-    
+  }
+}   
  });
  });
 
@@ -258,8 +279,10 @@ io.on('connection', (socket) => {
        socket.emit("login", "timeout");
      } else{
       
-      if(result[0].admin == 1)
-      {
+      //try {
+        checkAdmin(socket, ()=>{
+     // if(result[0].admin == 1)
+     // {
 
         con.query("SELECT * FROM users;", function (err, result)
         {
@@ -274,7 +297,13 @@ io.on('connection', (socket) => {
             socket.emit("update", result);
           }
         });
-      }
+      //}
+    });
+    /*} catch(err)
+    {
+      socket.emit("login", "timeout");
+    }
+    */
     }
   });
 }
@@ -350,6 +379,8 @@ io.on('connection', (socket) => {
          socket.emit("login", "timeout");
        } else{
         
+        try
+        {
         if(result[0].admin == 1)
         {
 
@@ -384,6 +415,10 @@ io.on('connection', (socket) => {
               }
             })
         }
+      }catch(err)
+      {
+        socket.emit("login", "timeout");
+      }
       }
     });
   
@@ -407,6 +442,11 @@ io.on('connection', (socket) => {
          socket.emit("login", "timeout");
        } else{
 
+        if(typeof usrnm[0] === "undefined"){
+
+          socket.emit("login", "timeout");  
+        }
+        else {
         con.query("SELECT projectdir FROM users WHERE username='" + usrnm[0].username + "';", function (err, result)
           {
             if(err) 
@@ -426,6 +466,7 @@ io.on('connection', (socket) => {
             });
             }
           });
+        }
        }
       }); 
         }
@@ -480,6 +521,29 @@ io.on('connection', (socket) => {
             });
           }
         }
+        }
+      });
+    }
+
+    // Check if the user is admin from the active users menu and then if they are preform the callback.
+    function checkAdmin(socket, callback)
+    {
+      con.query("SELECT admin FROM active WHERE socketid= '" + socket.id + "';", function (err, result)
+      {
+        if(err)
+        {
+          console.log(err);
+        } else{
+          try {
+            if(result[0].admin == 1)
+            {
+              callback();
+            }
+          } catch(ignore)
+          {
+            socket.emit("login", "timeout");
+            console.log("User was timed out for not been admin.");
+          }
         }
       });
     }
