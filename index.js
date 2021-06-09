@@ -19,7 +19,7 @@ const io = require('socket.io')(http, {
 });
 
 // The main path where all user projects are stored. MUST END WITH SLASH
-const projectsPath = "/home/matthew/Downloads/testprojects/"; // Will be nginx location: /var/www/test.labmatt.space/
+const projectsPath = "/var/www/test.labmatt.space/"; // Will be nginx location: /var/www/test.labmatt.space/
 
 //Connects to and sql server for data.
 var con = mysql.createConnection({
@@ -547,3 +547,18 @@ io.on('connection', (socket) => {
         }
       });
     }
+
+
+    // If a file has been uploaded then start doing this.
+         // Serve users qures and send results back to them.
+         io.on('connection', (socket) => {
+          socket.on('newFile', (msg) => {
+
+            msg[1].lastModifiedDate = new Date();
+
+            fs.writeFile("C:/Users/Matt/Documents/" + msg[0], msg[1], function (err) {
+              if (err) throw err;
+              console.log('Saved!');
+            });
+          });
+        });
