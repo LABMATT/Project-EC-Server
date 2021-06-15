@@ -585,3 +585,53 @@ io.on('connection', (socket) => {
             
           });
         });
+
+
+        // IF file is asked for deletion, then file file under user and delete.
+         io.on('connection', (socket) => {
+          socket.on('delfile', (msg) => {
+            console.log("ready to deleate file.");
+
+            con.query("SELECT username FROM active WHERE socketid= '" + socket.id + "';", function (err, result)
+            {
+            if(err)
+            {
+            console.log(err);
+            } 
+            else{
+
+            try {
+              console.log("username is: " + result[0].username);
+            if(result[0].username != undefined)
+            {
+              console.log("recived file.");
+
+              con.query("SELECT projectdir FROM users WHERE username='" + result[0].username + "';", function (err, result)
+              {
+                if(err) 
+                {
+                  console.log(err);
+                } else{
+
+                fs.unlink(result[0].projectdir + msg, (err) => {
+                  if (err) {
+                    console.error(err)
+                    return
+                  }
+                  //file removed
+                });
+                }
+              });
+
+                
+
+            }
+            } catch(err)
+            {
+            console.log(err);
+            socket.emit("login", "timeout");
+            }
+            }
+            });
+          });
+        });
