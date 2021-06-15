@@ -315,20 +315,9 @@ io.on('connection', (socket) => {
 io.on('connection', (socket) => {
   socket.on('del', (msg) => {
 
-    // get username from active database;
-    con.query("SELECT admin FROM active WHERE socketid='" + socket.id + "';", function (err, result)
-    {
-     if (err) 
-     {
+    checkAdmin(socket, ()=>{
 
-       console.log(err);
-       socket.emit("login", "timeout");
-     } else{
-      
-      if(result[0].admin == 1)
-      {
-
-        console.log("about to sql finding dir for user " + msg);
+              console.log("about to sql finding dir for user " + msg);
 
         con.query("SELECT projectdir FROM users WHERE username='" + msg + "';", function (err, result)
         {
@@ -357,9 +346,27 @@ io.on('connection', (socket) => {
         });
       }
         });
+    });
+
+    /*
+    // get username from active database;
+    con.query("SELECT admin FROM active WHERE socketid='" + socket.id + "';", function (err, result)
+    {
+     if (err) 
+     {
+
+       console.log(err);
+       socket.emit("login", "timeout");
+     } else{
+      
+      if(result[0].admin == 1)
+      {
+
+
       }
     }
   });
+  */
 
 });
 });
