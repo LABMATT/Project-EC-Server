@@ -133,7 +133,18 @@ io.on('connection', (socket) => {
         {
           if(err) console.log(err);
 
-          // If a user indeed has matched username and password then check if there admin and update the actives users table acordinling as well as send that info back to the client.
+          con.query("SELECT username FROM users WHERE username='" + username + "';", function (err, result)
+        {
+          if(err) 
+          {
+            console.log(err) 
+          } else {
+
+            if(result[0].username != undefined)
+            {
+             username = result[0].username;
+
+            // If a user indeed has matched username and password then check if there admin and update the actives users table acordinling as well as send that info back to the client.
           if(result[0].admin == 1)
           {
 
@@ -164,7 +175,12 @@ io.on('connection', (socket) => {
 
             socket.emit("id", echid)
             socket.emit("login", [true, false]);
+          } 
+            }
           }
+        });
+
+          
         });
 
        
@@ -224,7 +240,7 @@ io.on('connection', (socket) => {
     console.log("recived username request:" + msg);
 
     // If a username is requested then look for the id that asked in the stored data table then send back the username acoiated with it.
-    if(msg[0] == "name")
+    if(msg[0] == "name") // If info is name then we know were been asked what our name is.
     {
 
       try {
@@ -577,8 +593,13 @@ io.on('connection', (socket) => {
               console.log("recived file.");
 
               fs.writeFile(projectsPath + result[0].username + "/" + msg[0], msg[1], function (err) {
-              if (err) throw err;
-              console.log('Saved!');
+              if (err) 
+              {
+                console.log(err);
+              }
+              else {
+                console.log('Saved!');
+              }              
             });
             
             }
@@ -629,9 +650,6 @@ io.on('connection', (socket) => {
                 });
                 }
               });
-
-                
-
             }
             } catch(err)
             {
