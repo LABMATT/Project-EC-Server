@@ -129,7 +129,7 @@ io.on('connection', (socket) => {
       if(result[0].password == password)
       {
 
-        con.query("SELECT admin FROM users WHERE username='" + username + "';", function (err, result)
+        con.query("SELECT admin FROM users WHERE username='" + username + "';", function (err, ad)
         {
           if(err) console.log(err);
 
@@ -143,9 +143,10 @@ io.on('connection', (socket) => {
             if(result[0].username != undefined)
             {
              username = result[0].username;
+             console.log("THE RECTIVED USERNAME IS: " + username);
 
             // If a user indeed has matched username and password then check if there admin and update the actives users table acordinling as well as send that info back to the client.
-          if(result[0].admin == 1)
+          if(ad[0].admin == 1)
           {
 
             var echid = (new Date()).getTime();
@@ -470,6 +471,10 @@ io.on('connection', (socket) => {
           socket.emit("login", "timeout");  
         }
         else {
+
+          var returnfiles = [];
+              var folder = [];
+
         con.query("SELECT projectdir FROM users WHERE username='" + usrnm[0].username + "';", function (err, result)
           {
             if(err) 
@@ -479,13 +484,64 @@ io.on('connection', (socket) => {
 
               var dirInfo = [];
 
+              // Read files from base dir.
             fs.readdir(result[0].projectdir, function (err, files) {
               //handling error
               if (err) {
                   return console.log('Unable to scan directory: ' + err);
               } 
 
-              socket.emit("files", files);
+              
+
+              // Check each file if its a dir or file. if dir then add to folders var for later inspection.
+              await files.forEach(element => {
+                var stats = fs.statSync(result[0].projectdir + element);
+                if(stats.isDirectory())
+                {
+                  returnfiles.push(element + "/");
+                  folder.push(element + "/");
+                } else {
+                  returnfiles.push(element);
+                }
+              });
+
+              // Checks though all folders to see contents.
+              //var foldamout = folder.length;
+
+              console.log("found folders are: " + folder);
+
+             await  folder.forEach(content => {
+                console.log("ready");
+                console.log("Were looking at " + result[0].projectdir + content);
+                fs.readdir(result[0].projectdir + content, function (err, subfiles) {
+                  //handling error
+                  if (err) {
+                      return console.log('Unable to scan directory: ' + err);
+                  } 
+
+                  
+                  console.log(" and we have " + subfiles);
+
+
+                  subfiles.forEach(element => {
+                    var stats = fs.statSync(result[0].projectdir + content + element);
+                if(stats.isDirectory())
+                {
+                  returnfiles.push(content + element + "/");
+                  folder.push(content + element + "/");
+                } else {
+                  returnfiles.push(content + element);
+                  console.log("adding file " + content + element);
+                  console.log(returnfiles);
+                 // socket.emit("files", returnfiles);
+                }
+                  });
+              });
+            });
+            
+            console.log("sending off files: ");
+            console.log(returnfiles);
+              socket.emit("files", returnfiles);
             });
             }
           });
